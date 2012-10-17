@@ -31,13 +31,55 @@
 {
 }
 
-- (void) testDoGet
+- (void) testMakeQuerystring
 {
-    NSString *url = @"https://api.github.com";
+    NSDictionary *params = @{@"foo": @"bar"};
+    NSString *querystring = [HttpClient makeQuerystringFromDict: params];
+    GHAssertEqualStrings(querystring, @"foo=bar", @"query string test");
+}
+
+- (void) testDoGetSuccess
+{
+    [self prepare];
+    
+    NSString *url = @"https://api.github.com/legacy/repos/search/objc-Async";
     Deferred *d = [HttpClient doGet: url parameters: nil];
     [d then: ^id(id resultObject) {
+        NSDictionary *data = (NSDictionary *)resultObject;
+        
+        // get first repository
+        NSArray *repositories = [data objectForKey: @"repositories"];
+        NSString *name = [repositories[0] objectForKey:@"name"];
+        GHTestLog(name);
+        GHAssertEqualStrings(name, @"objc-Async", @"first repository is this project");
+        
+        [self notify:kGHUnitWaitStatusSuccess];
         return resultObject;
     }];
+    
+    [self waitForStatus: kGHUnitWaitStatusSuccess timeout: 10.0f];
+}
+
+- (void) testDoGetFailure
+{
+    [self prepare];
+    
+    NSString *url = @"https://not/exist/path";
+    Deferred *d = [HttpClient doGet: url parameters: nil];
+    [d then: ^id(id resultObject) {
+        GHTestLog(@"Not reach here");
+        
+        [self notify:kGHUnitWaitStatusSuccess];
+        return resultObject;
+    } failure:^id(id resultObject) {
+        NSError *error = (NSError *)resultObject;
+        GHTestLog(@"%@", [error localizedDescription]);
+        
+        [self notify:kGHUnitWaitStatusSuccess];
+        return resultObject;
+    }];
+    
+    [self waitForStatus: kGHUnitWaitStatusSuccess timeout: 10.0f];
 }
 
 - (void) testDoPost

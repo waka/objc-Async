@@ -27,7 +27,10 @@
 + (Deferred *) doGet: (NSString *)url parameters: (NSDictionary *)params
 {
     NSMutableString *urlString = [[NSMutableString alloc] initWithString:url];
-    [urlString appendString: [HttpClient makeQuerystringFromDict: params]];
+    if (params) {
+        [urlString appendString: @"?"];
+        [urlString appendString: [HttpClient makeQuerystringFromDict: params]];
+    }
     
     NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL: [NSURL URLWithString: urlString]
                                                        cachePolicy: NSURLRequestUseProtocolCachePolicy
@@ -43,15 +46,17 @@
     NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL: [NSURL URLWithString: url]
                                                        cachePolicy: NSURLRequestUseProtocolCachePolicy
                                                    timeoutInterval: 30.0];
-    
-    NSString *postString = [HttpClient makeQuerystringFromDict: params];
-    NSData *postData = [NSData dataWithBytes: [postString UTF8String]
-                                      length: [postString length]];
-    
     [req setHTTPMethod: @"POST"];
     [req setValue: @"application/x-www-form-urlencoded" forHTTPHeaderField: @"Content-Type"];
-    [req setValue: [NSString stringWithFormat: @"%d", [postString length]] forHTTPHeaderField: @"Content-Length"];
-    [req setHTTPBody: postData];
+
+    if (params) {
+        NSString *postString = [HttpClient makeQuerystringFromDict: params];
+        NSData *postData = [NSData dataWithBytes: [postString UTF8String]
+                                          length: [postString length]];
+        [req setValue: [NSString stringWithFormat: @"%d", [postString length]] forHTTPHeaderField: @"Content-Length"];
+        [req setHTTPBody: postData];
+    }
+    
     return [self _send: req];
 }
 
