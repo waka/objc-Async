@@ -9,7 +9,7 @@
 
 
 /**
- * Prototype of private methods.
+ * Prototype of private properties and methods.
  */
 @interface HttpClient()
 

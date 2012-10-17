@@ -33,6 +33,11 @@
 
 - (void) testDoGet
 {
+    NSString *url = @"https://api.github.com";
+    Deferred *d = [HttpClient doGet: url parameters: nil];
+    [d then: ^id(id resultObject) {
+        return resultObject;
+    }];
 }
 
 - (void) testDoPost

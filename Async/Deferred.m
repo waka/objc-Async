@@ -9,10 +9,16 @@
 
 
 /**
- * Prototype of private methods.
+ * Prototype of private properties and methods.
  */
 
 @interface Deferred()
+
+// Using ARC properties
+
+@property (nonatomic, strong) id result;
+@property (nonatomic, unsafe_unretained) DeferredState state;
+@property (nonatomic, strong) NSMutableArray *chain;
 
 - (void) _fire: (id)valueObject;
 
