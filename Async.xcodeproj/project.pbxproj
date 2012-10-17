@@ -254,7 +254,6 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/../../sources/gh-unit/Project-iOS/build/Framework\"",
-					"\"$(SRCROOT)/../../sample/gh-unit/Project-iOS/build/Framework\"",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "AsyncTest/AsyncTest-Prefix.pch";
@@ -272,7 +271,6 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/../../sources/gh-unit/Project-iOS/build/Framework\"",
-					"\"$(SRCROOT)/../../sample/gh-unit/Project-iOS/build/Framework\"",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "AsyncTest/AsyncTest-Prefix.pch";

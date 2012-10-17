@@ -9,9 +9,13 @@
 #import "Deferred.h"
 
 
+/**
+ * Make easy to handle HTTP request by Deferred pattern.
+ */
+
 @interface HttpClient : NSObject
 
-+ (Deferred *) doGet: (NSString *)url params: (NSDictionary *)params;
-+ (Deferred *) doPost: (NSString *)url params: (NSDictionary *)params;
++ (Deferred *) doGet: (NSString *)url parameters: (NSDictionary *)params;
++ (Deferred *) doPost: (NSString *)url parameters: (NSDictionary *)params;
 
 @end

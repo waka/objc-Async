@@ -2,8 +2,7 @@
 //  HttpClientTest.m
 //  Async
 //
-//  Created by yo_waka on 12/10/16.
-//  Copyright (c) 2012年 yo_waka. All rights reserved.
+//  Copyright (c) 2012 yo_waka. All rights reserved.
 //
 
 #import "HttpClient.h"

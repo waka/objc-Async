@@ -5,16 +5,26 @@
 //  Copyright (c) 2012 yo_waka. All rights reserved.
 //
 
-
 #import "HttpClient.h"
+
+
+/**
+ * Prototype of private methods.
+ */
+@interface HttpClient()
+
++ (NSString *) urlEncode: (id)obj;
++ (NSString *) makeQuerystringFromDict: (NSDictionary *)dict;
+
+@end
 
 
 @implementation HttpClient
 
-+ (Deferred *) doGet: (NSString *)url params: (NSDictionary *)params
++ (Deferred *) doGet: (NSString *)url parameters: (NSDictionary *)params
 {
     NSMutableString *urlString = [[NSMutableString alloc] initWithString:url];
-    [urlString appendString: [HttpClient urlEncodedString: params]];
+    [urlString appendString: [HttpClient makeQuerystringFromDict: params]];
     
     NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL: [NSURL URLWithString: urlString]
                                                        cachePolicy: NSURLRequestUseProtocolCachePolicy
@@ -25,13 +35,13 @@
     return [self _send: req];
 }
 
-+ (Deferred *) doPost: (NSString *)url params: (NSDictionary *)params
++ (Deferred *) doPost: (NSString *)url parameters: (NSDictionary *)params
 {
     NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL: [NSURL URLWithString: url]
                                                        cachePolicy: NSURLRequestUseProtocolCachePolicy
                                                    timeoutInterval: 30.0];
     
-    NSString *postString = [HttpClient urlEncodedString: params];
+    NSString *postString = [HttpClient makeQuerystringFromDict: params];
     NSData *postData = [NSData dataWithBytes: [postString UTF8String]
                                       length: [postString length]];
     
@@ -88,19 +98,19 @@
 }
 
 
-+ (NSString *) _urlEncode: (id)obj
++ (NSString *) urlEncode: (id)obj
 {
     NSString *string = [NSString stringWithFormat: @"%@", obj];
     return [string stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
 }
 
-+ (NSString *) urlEncodedString: (NSDictionary *)dict
++ (NSString *) makeQuerystringFromDict: (NSDictionary *)dict
 {
     NSMutableArray *parts = [NSMutableArray array];
     for (id key in dict) {
         id value = [dict objectForKey: key];
         NSString *part = [NSString stringWithFormat: @"%@=%@",
-                          [HttpClient _urlEncode: key], [HttpClient _urlEncode: value]];
+                          [HttpClient urlEncode: key], [HttpClient urlEncode: value]];
         [parts addObject: part];
     }
     return [parts componentsJoinedByString: @"&"];

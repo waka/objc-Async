@@ -1,1 +1,4 @@
-ToDo write tests of HttpClient.
+# ToDo
+
+* Tests for HttpClient
+* Usage
