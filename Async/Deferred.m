@@ -9,6 +9,17 @@
 
 
 /**
+ * Prototype of private methods.
+ */
+
+@interface Deferred()
+
+- (void) _fire: (id)valueObject;
+
+@end
+
+
+/**
  * Deferred implementation.
  */
 

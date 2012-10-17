@@ -9,11 +9,16 @@
 
 
 /**
- * The definition of Promise/A interface.
+ * Callback blocks.
  */
 
 typedef id (^CallbackBlock)(id resultObject);
 typedef id (^ErrBackBlock)(id resultObject);
+
+
+/**
+ * Definition of Promise/A interface.
+ */
 
 @protocol Promise
 
@@ -41,7 +46,7 @@ typedef enum {
 
 
 /**
- * The deferred must be implemented Promise/A interface.
+ * Deferred must be implemented Promise/A interface.
  */
 
 @interface Deferred : NSObject<Promise>

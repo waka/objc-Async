@@ -13,11 +13,14 @@
  */
 @interface HttpClient()
 
-+ (NSString *) urlEncode: (id)obj;
-+ (NSString *) makeQuerystringFromDict: (NSDictionary *)dict;
++ (Deferred *) _send: (NSMutableURLRequest *)req;
 
 @end
 
+
+/**
+ * HttpClient implementation.
+ */
 
 @implementation HttpClient
 

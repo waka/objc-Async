@@ -15,7 +15,11 @@
 
 @interface HttpClient : NSObject
 
+// Class methods
+
 + (Deferred *) doGet: (NSString *)url parameters: (NSDictionary *)params;
 + (Deferred *) doPost: (NSString *)url parameters: (NSDictionary *)params;
++ (NSString *) urlEncode: (id)obj;
++ (NSString *) makeQuerystringFromDict: (NSDictionary *)dict;
 
 @end
