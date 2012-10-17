@@ -24,11 +24,7 @@ typedef id (^ErrBackBlock)(id resultObject);
 
 @required
 - (void) resolve: (id)valueObject;
-
-@required
 - (void) reject: (id)valueObject;
-
-@required
 - (id) then: (CallbackBlock)cb failure: (ErrBackBlock)eb;
 
 @end
