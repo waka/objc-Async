@@ -34,34 +34,27 @@ Deferred *deferred = [Deferred defer];
 ### HttpClient
 
 ```objectivec
-// get request
+// get json request
 NSString *url = @"http://hostname/path/to/api";
 NSDictionary *params = @{@"key": @"value"};
 
-Deferred *deferred = [HttpClient doGet: url parameters: params];
-[deferred then: ^id(id result) {
-    // result is NSDictionary object translated from JSON
-    NSDictionary *data = (NSDictionary *)result;
-    // process data
-    return data;
-}];
-[deferred resolve: nil];
+HttpClient *client = [HttpClient clientWithUrl: url];
+[client getJsonWithDelegate: params
+                    headers: nil
+                   delegate: self
+                    success: @selector(handleGetSuccess:)
+                    failure: @selector(handleGetFailure:)];
 
 // post request
 NSString *url = @"http://hostname/path/to/api";
 NSDictionary *params = @{@"key": @"value"};
 
-Deferred *deferred = [HttpClient doPost: url parameters: params];
-[deferred then: ^id(id result) {
-    // result is NSDictionary object that translated from JSON
-    NSDictionary *data = (NSDictionary *)result;
-    // process data
-    return data;
-} failure: ^id(id result) {
-    // result is NSError object
-    NSError *error = (NSError *)result;
-    // process error
-    return error;
-}];
-[deferred resolve: nil];
+HttpClient *client = [HttpClient clientWithUrl: url];
+[client postWithDelegate: params
+                 headers: nil
+                delegate: self
+                 success: @selector(handlePostSuccess:)
+                 failure: @selector(handlePostFailure:)];
+
+// and can use PUT/DELETE request, see HttpClient.h
 ```
