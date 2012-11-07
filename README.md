@@ -1,7 +1,10 @@
 # objc-Async
 
 * Deferred
-* HttpClient(GET/POST request using Deferred)
+    The implementation of CommonJS Promise/A interface.
+* HttpClient
+    Handle HTTP request that can use GET/POST/PUT/DELETE at HTTP method.
+    And some utility methods (for example, url encoding).
 
 ## Usage
 
