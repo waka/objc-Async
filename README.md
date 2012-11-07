@@ -33,6 +33,8 @@ Deferred *deferred = [Deferred defer];
 
 ### HttpClient
 
+Required modules are "Reachability" and "SVProgressHD"
+
 ```objectivec
 // get json request
 NSString *url = @"http://hostname/path/to/api";
