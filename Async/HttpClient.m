@@ -1,291 +1,110 @@
 //
 //  HttpClient.m
+//  Async
 //
 //  Copyright (c) 2012 yo_waka. All rights reserved.
 //
 
 #import "HttpClient.h"
-#import "Reachability.h"
-#import "SVProgressHUD.h"
 
 
-@interface HttpClient ()
+/**
+ * Prototype of private properties and methods.
+ */
+@interface HttpClient()
 
-@property (nonatomic, strong) NSString *url;
-
-- (NSMutableURLRequest *) createGetRequest: (NSDictionary *)params;
-- (NSMutableURLRequest *) createPostRequest;
-- (NSMutableURLRequest *) createPutRequest;
-- (NSMutableURLRequest *) createDeleteRequest;
-- (void) setRequestHeaders: (NSMutableURLRequest *)req headers: (NSDictionary *)headers;
-
-- (void) send: (NSMutableURLRequest *)req
-     delegate: (id)target
-      success: (SEL)successSelector
-      failure: (SEL)failureSelector;
++ (Deferred *) _send: (NSMutableURLRequest *)req;
 
 @end
 
 
+/**
+ * HttpClient implementation.
+ */
+
 @implementation HttpClient
 
-#pragma mark Initialize methods
-
-+ (id) clientWithUrl: (NSString *)url
++ (Deferred *) doGet: (NSString *)url parameters: (NSDictionary *)params
 {
-    return [[HttpClient alloc] initWithUrl: url];
-}
-
-- (id) initWithUrl: (NSString *)url
-{
-    self = [super init];
-    if (self) {
-        _url = url;
-    }
-    return self;
-}
-
-- (void) setRequestHeaders: (NSMutableURLRequest *)req headers: (NSDictionary *)headers
-{
-    if (!headers) {
-        return;
-    }
-    for (id key in headers) {
-        [req setValue: key forHTTPHeaderField: [headers objectForKey: key]];
-    }
-}
-
-
-#pragma mark Get request methods
-
-- (void) getWithDelegate: (NSDictionary *)params
-                 headers: (NSDictionary *)headers
-                delegate: (id)target
-                 success: (SEL)successSelector
-                 failure: (SEL)failureSelector
-{
-    NSMutableURLRequest *req = [self createGetRequest: params];
-    [self setRequestHeaders: req headers: headers];
-
-    [self send: req delegate: target success: successSelector failure: failureSelector];
-}
-
-- (void) getJsonWithDelegate: (NSDictionary *)params
-                     headers: (NSDictionary *)headers
-                    delegate: (id)target
-                     success: (SEL)successSelector
-                     failure: (SEL)failureSelector
-{
-    NSMutableURLRequest *req = [self createGetRequest: params];
-    [self setRequestHeaders: req headers: headers];
-    [req setValue: @"application/json" forHTTPHeaderField: @"Content-Type"];
-
-    [self send: req delegate: target success: successSelector failure: failureSelector];
-}
-
-- (NSMutableURLRequest *) createGetRequest: (NSDictionary *)params
-{
-    NSMutableString *urlString = [[NSMutableString alloc] initWithString: self.url];
+    NSMutableString *urlString = [[NSMutableString alloc] initWithString:url];
     if (params) {
         [urlString appendString: @"?"];
-        [urlString appendString: [HttpClient makeQuerystringFromDictionary: params]];
+        [urlString appendString: [HttpClient makeQuerystringFromDict: params]];
     }
     
     NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL: [NSURL URLWithString: urlString]
                                                        cachePolicy: NSURLRequestUseProtocolCachePolicy
                                                    timeoutInterval: 30.0];
     [req setHTTPMethod: @"GET"];
-    return req;
+    [req setValue: @"application/json" forHTTPHeaderField: @"Content-Type"];
+    
+    return [self _send: req];
 }
 
-
-#pragma mark Post request methods
-
-- (void) postWithDelegate: (NSDictionary *)params
-                  headers: (NSDictionary *)headers
-                 delegate: (id)target
-                  success: (SEL)successSelector
-                  failure: (SEL)failureSelector
++ (Deferred *) doPost: (NSString *)url parameters: (NSDictionary *)params
 {
-    NSMutableURLRequest *req = [self createPostRequest];
-    [self setRequestHeaders: req headers: headers];
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL: [NSURL URLWithString: url]
+                                                       cachePolicy: NSURLRequestUseProtocolCachePolicy
+                                                   timeoutInterval: 30.0];
+    [req setHTTPMethod: @"POST"];
+    [req setValue: @"application/x-www-form-urlencoded" forHTTPHeaderField: @"Content-Type"];
 
     if (params) {
-        NSString *postString = [HttpClient makeQuerystringFromDictionary: params];
+        NSString *postString = [HttpClient makeQuerystringFromDict: params];
         NSData *postData = [NSData dataWithBytes: [postString UTF8String]
                                           length: [postString length]];
         [req setValue: [NSString stringWithFormat: @"%d", [postString length]] forHTTPHeaderField: @"Content-Length"];
         [req setHTTPBody: postData];
     }
-
-    [self send: req delegate: target success: successSelector failure: failureSelector];
-}
-
-- (void) postJsonWithDelegate: (NSDictionary *)params
-                      headers: (NSDictionary *)headers
-                     delegate: (id)target
-                      success: (SEL)successSelector
-                      failure: (SEL)failureSelector
-{
-    NSMutableURLRequest *req = [self createPostRequest];
-    [self setRequestHeaders: req headers: headers];
     
-    if (params) {
-        NSError *jsonError = nil;
-        NSData *postData = [NSJSONSerialization dataWithJSONObject: params
-                                                           options: NSJSONWritingPrettyPrinted
-                                                             error: &jsonError];
-        int contentLength = [[[NSString alloc] initWithData: postData encoding: NSUTF8StringEncoding] length];
-        [req setValue: [NSString stringWithFormat: @"%d", contentLength] forHTTPHeaderField: @"Content-Length"];
-        [req setHTTPBody: postData];
-    }
-    [self send: req delegate: target success: successSelector failure: failureSelector];
+    return [self _send: req];
 }
 
-- (NSMutableURLRequest *) createPostRequest
++ (Deferred *) _send: (NSMutableURLRequest *)req
 {
-    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL: [NSURL URLWithString: self.url]
-                                                       cachePolicy: NSURLRequestUseProtocolCachePolicy
-                                                   timeoutInterval: 30.0];
-    [req setHTTPMethod: @"POST"];
-    return req;
-}
+    Deferred *deferred = [Deferred defer];
+    __weak Deferred *wd = deferred;
 
-
-#pragma mark Put request methods
-
-- (void) putWithDelegate: (NSDictionary *)headers
-                delegate: (id)target
-                 success: (SEL)successSelector
-                 failure: (SEL)failureSelector
-{
-    NSMutableURLRequest *req = [self createPutRequest];
-    [self setRequestHeaders: req headers: headers];
-    [self send: req delegate: target success: successSelector failure: failureSelector];
-}
-
-- (NSMutableURLRequest *) createPutRequest
-{
-    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL: [NSURL URLWithString: self.url]
-                                                       cachePolicy: NSURLRequestUseProtocolCachePolicy
-                                                   timeoutInterval: 30.0];
-    [req setHTTPMethod: @"PUT"];
-    return req;
-}
-
-
-#pragma mark Delete request methods
-
-- (void) deleteWithDelegate: (NSDictionary *)headers
-                   delegate: (id)target
-                    success: (SEL)successSelector
-                    failure: (SEL)failureSelector
-{
-    NSMutableURLRequest *req = [self createDeleteRequest];
-    [self setRequestHeaders: req headers: headers];
-    [self send: req delegate: target success: successSelector failure: failureSelector];
-}
-
-- (NSMutableURLRequest *) createDeleteRequest
-{
-    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL: [NSURL URLWithString: self.url]
-                                                       cachePolicy: NSURLRequestUseProtocolCachePolicy
-                                                   timeoutInterval: 30.0];
-    [req setHTTPMethod: @"DELETE"];
-    return req;
-}
-
-
-#pragma mark Perform request
-
-- (void) send: (NSMutableURLRequest *)req
-     delegate: (id)target
-      success: (SEL)successSelector
-      failure: (SEL)failureSelector
-{
-    // Check network reachability
-    Reachability *hostReach = [Reachability reachabilityForInternetConnection];
-    if ([hostReach currentReachabilityStatus] == NotReachable) {
-        [SVProgressHUD showErrorWithStatus: @"Network is no available"];
-        return;
-    }
-    
-    NSInvocation *successInvocation = nil;
-    NSInvocation *failureInvocation = nil;
-    if (target) {
-        if (successSelector) {
-            NSMethodSignature *successSig = [target methodSignatureForSelector: successSelector];
-            if (successSig) {
-                successInvocation = [NSInvocation invocationWithMethodSignature: successSig];
-                [successInvocation setTarget: target];
-                [successInvocation setSelector: successSelector];
-            }
-        }
-        if (failureSelector) {
-            NSMethodSignature *failureSig = [target methodSignatureForSelector: failureSelector];
-            if (failureSig) {
-                failureInvocation = [NSInvocation invocationWithMethodSignature: failureSig];
-                [failureInvocation setTarget: target];
-                [failureInvocation setSelector: failureSelector];
-            }
-        }
-    }
-    
-    // Show spinner
-    [SVProgressHUD show];
-        
+    // Make an NSOperationQueue
     NSOperationQueue *queue = [[NSOperationQueue alloc] init];
-    [queue setName: @"AsyncHttpRequestQueue"];
+    [queue setName:@"AsyncHttpRequestQueue"];
     
+    // Send an asyncronous request on the queue
     [NSURLConnection sendAsynchronousRequest: req
                                        queue: queue
-                           completionHandler: ^(NSURLResponse *res, NSData *data, NSError *error) {
-                               __block NSURLResponse *response = [res copy];
-                               
-                               // If there was an error getting the data
-                               if (error) {
-                                   __block NSError *requestError = [error copy];
-                                   dispatch_async(dispatch_get_main_queue(), ^{
-                                       [SVProgressHUD showErrorWithStatus: @"Request error"];
-                                       [failureInvocation setArgument: &response atIndex: 2];
-                                       [failureInvocation setArgument: &requestError atIndex: 3];
-                                       [failureInvocation invoke];
-                                   });
-                                   return;
-                               }
-
-                               //success => 200, 201, 202, 204, 304
-                               switch (res.statusCode) {
-                                   case 200:
-                                   case 201:
-                                   case 202:
-                                   case 204:
-                                   case 304:
-                                       __block NSData *responseData = [data copy];
-                                       dispatch_async(dispatch_get_main_queue(), ^{
-                                           [SVProgressHUD dismiss];
-                                           [successInvocation setArgument: &response atIndex: 2];
-                                           [successInvocation setArgument: &responseData atIndex: 3];
-                                           [successInvocation invoke];
-                                       });
-                                       break;
-                                   default:
-                                       __block NSError *responseError = [NSError errorWithDomain: @"HttpClient"
-                                                                                            code: 1000
-                                                                                        userInfo: nil];
-                                       dispatch_async(dispatch_get_main_queue(), ^{
-                                           [SVProgressHUD showErrorWithStatus: @"Request error"];
-                                           [failureInvocation setArgument: &response atIndex: 2];
-                                           [failureInvocation setArgument: &responseError atIndex: 3];
-                                           [failureInvocation invoke];
-                                       });
-                                       break;
-                               }
-                           }];
+                           completionHandler: ^(NSURLResponse *response, NSData *data, NSError *error) {
+        
+        // If there was an error getting the data
+        if (error) {
+            dispatch_async(dispatch_get_main_queue(), ^(void) {
+                [wd reject: error];
+            });
+            return;
+        }
+        
+        // Decode the data
+        NSError *jsonError;
+        NSDictionary *responseDict = [NSJSONSerialization JSONObjectWithData: data
+                                                                     options: 0
+                                                                       error: &jsonError];
+        
+        // If there was an error decoding the JSON
+        if (jsonError) {
+            dispatch_async(dispatch_get_main_queue(), ^(void) {
+                [wd reject: jsonError];
+            });
+            return;
+        }
+        
+        // All looks fine, lets call the completion block with the response data
+        dispatch_async(dispatch_get_main_queue(), ^(void) {
+            [wd resolve: responseDict];;
+        });
+    }];
+    
+    return deferred;
 }
 
-
-#pragma mark Utility methods
 
 + (NSString *) urlEncode: (id)obj
 {
@@ -293,11 +112,11 @@
     return [string stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
 }
 
-+ (NSString *) makeQuerystringFromDictionary: (NSDictionary *)params
++ (NSString *) makeQuerystringFromDict: (NSDictionary *)dict
 {
     NSMutableArray *parts = [NSMutableArray array];
-    for (id key in params) {
-        id value = params[key];
+    for (id key in dict) {
+        id value = [dict objectForKey: key];
         NSString *part = [NSString stringWithFormat: @"%@=%@",
                           [HttpClient urlEncode: key], [HttpClient urlEncode: value]];
         [parts addObject: part];
@@ -305,16 +124,4 @@
     return [parts componentsJoinedByString: @"&"];
 }
 
-
-+ (id) responseJSON: (NSData *)data
-{
-    // Decode the data from JSON
-    NSError *jsonError;
-    NSDictionary *json = [NSJSONSerialization JSONObjectWithData: data
-                                                         options: 0
-                                                           error: &jsonError];
-    return (jsonError) ? nil : json;
-}
-
 @end
-
